@@ -123,16 +123,19 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 Tout = T(x)
                 Sout = S(x)
                 lossG_dis = -kl_div_logits(args, Tout, Sout)
-                (lossG_dis).backward(retain_graph=True)
+                # (lossG_dis).backward(retain_graph=True)
             else:
                 lossG_dis, cs, mag_ratio = zoge_backward(args, x_pre, x, S, T)
 
             if args.alpha_gan > 0:
                 lossG_gan = D(x)
                 lossG_gan = -lossG_gan.mean()
-                (args.alpha_gan * lossG_gan).backward(retain_graph=True)
+                if not args.white_box:
+                    (args.alpha_gan * lossG_gan).backward()
 
             lossG = lossG_dis + (args.alpha_gan * lossG_gan)
+            if args.white_box:
+                lossG.backward()
             optG.step()
 
         log.append_tensor(
